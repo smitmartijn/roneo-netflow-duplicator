@@ -7,13 +7,14 @@ import select
 import time
 from datetime import datetime
 import logging
+import yaml
 
-def send_flow(byte_payload, src_ip, collector_ip, args):
+def send_flow(byte_payload, src_ip, collector_ip, config):
     # This function uses Scapy to make sure the original source IP address is maintained.
     # This function spoofs the source in order to report the right source on the netflow collector
-    payload = IP(src=src_ip, dst=collector_ip) / UDP(sport=10011, dport=int(args.collector_port)) / Raw(load=byte_payload)
+    payload = IP(src=src_ip, dst=collector_ip) / UDP(sport=10011, dport=int(config['collector_port'])) / Raw(load=byte_payload)
 
-    if args.debug != False:
+    if config['debug'] != False:
         ipLoad = len(payload.getlayer(IP))
         udpLoad = len(payload.getlayer(UDP))
         rawLoad = len(payload.getlayer(Raw))
@@ -35,9 +36,9 @@ def send_flow(byte_payload, src_ip, collector_ip, args):
         output = send(payload, verbose=False)
 
 
-def main(args):
+def main(config):
     # Open up the server socket
-    address = (args.bind_ip, int(args.bind_port))
+    address = (config['bind_ip'], int(config['bind_port']))
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind(address)
 
@@ -46,8 +47,8 @@ def main(args):
     stats_collectors = {}
     stats_time_last  = time.time()
 
-    collectors_list = args.collector_ips.split(",")
-    logging.info("Started Roneo - listening on %s:%s - sending to: %s on port %s" % (args.bind_ip, args.bind_port, args.collector_ips, args.collector_port))
+    #collectors_list = config.collectors.split(",")
+    logging.info("Started Roneo - listening on %s:%s - sending to: %s on port %s" % (config['bind_ip'], config['bind_port'], config['collectors'], config['collector_port']))
 
     while True:
         # Report stats every 60 seconds
@@ -68,11 +69,11 @@ def main(args):
 
             stats_time_last = time.time()
 
-
+        # Pull packet from socket
         recv_data, addr = server_socket.recvfrom(1500)
         source_ip = addr[0]
 
-        if args.debug != False:
+        if config['debug'] != False:
             logging.debug("Got a packet from source IP: %s" % source_ip)
 
         # Source stats tracking
@@ -82,8 +83,8 @@ def main(args):
             stats_sources[source_ip] = 1
 
         # Go through the list of collectors and send the flow
-        for ip in collectors_list:
-            send_flow(recv_data, source_ip, ip, args)
+        for ip in config['collectors']:
+            send_flow(recv_data, source_ip, ip, config)
 
             # Stats tracking
             if ip in stats_collectors:
@@ -93,21 +94,22 @@ def main(args):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Configure Roneo - IP NetFlow Multiplexer')
-    parser.add_argument('--collector_ips', action='store', required=True, help='Netflow Collector IP list')
-    parser.add_argument('--collector_port', action='store', required=True, help='Send to port on collectors')
-    parser.add_argument('--bind_ip', action='store', required=True, help='Listen on IP address')
-    parser.add_argument('--bind_port', action='store', required=True, help='Listen on port')
-    parser.add_argument('--debug', action='store', default=False, help='Debug logging')
+    parser.add_argument('--configfile', action='store', required=True, help='Configuration file')
     args = parser.parse_args()
     return args
 
+def parse_config(args):
+    with open(args.configfile, 'r') as ymlfile:
+        cfg = yaml.load(ymlfile)
+    return cfg
 
 if __name__ == "__main__":
-    args = parse_arguments()
+    args   = parse_arguments()
+    config = parse_config(args)
 
-    if args.debug != False:
-        logging.basicConfig(filename='roneo.log', format='%(asctime)s - %(message)s', level=logging.DEBUG)
+    if config['debug'] != False:
+        logging.basicConfig(filename=config['log_file'], format='%(asctime)s - %(message)s', level=logging.DEBUG)
     else:
-        logging.basicConfig(filename='roneo.log', format='%(asctime)s - %(message)s', level=logging.INFO)
+        logging.basicConfig(filename=config['log_file'], format='%(asctime)s - %(message)s', level=logging.INFO)
 
-    main(args)
+    main(config)

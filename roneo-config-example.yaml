@@ -1,0 +1,11 @@
+bind_ip: 10.0.0.2
+bind_port: 2055
+
+collectors:
+  - 10.0.0.10
+  - 10.0.0.11
+  - 10.0.0.12
+collector_port: 2055
+
+debug: False
+log_file: /var/log/roneo.log
