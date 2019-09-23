@@ -12,11 +12,23 @@ The Python module called Scapy is used to be able to spoof the NetFlow source IP
 # Installation
 
 ```
+mkdir /opt && cd /opt
 git clone https://github.com/smitmartijn/roneo-netflow-duplicator.git
 cd roneo-netflow-duplicator
 pip install -r requirements.txt
-cp roneo-config-example.yaml roneo-config.yaml
+cp roneo-config-example.yaml /etc/roneo-config.yaml
 # Edit config
-(vi|nano|vim|pico|editorofyourchoice) roneo-config.yaml
+(vi|nano|vim|pico|editorofyourchoice) /etc/roneo-config.yaml
 python3 main.py --configfile roneo-config.yaml
+```
+
+# Starting on system boot
+
+For CentOS 7 / SystemD systems:
+
+```
+cp /opt/roneo-netflow-duplicator/roneo.service /etc/systemd/system/roneo.service
+systemctl daemon-reload
+systemctl enable roneo
+systemctl start roneo
 ```

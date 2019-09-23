@@ -1,0 +1,13 @@
+[Unit]
+Description=Roneo NetFlow Duplicator
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /opt/roneo-netflow-duplicator/main.py --configfile /etc/roneo-config.yaml
+Restart=on-abort
+
+
+[Install]
+WantedBy=multi-user.target
