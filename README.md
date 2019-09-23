@@ -15,5 +15,8 @@ The Python module called Scapy is used to be able to spoof the NetFlow source IP
 git clone https://github.com/smitmartijn/roneo-netflow-duplicator.git
 cd roneo-netflow-duplicator
 pip install -r requirements.txt
-python3 main.py --collector_ips 10.0.0.10 --bind_ip 10.0.0.9 --collector_port 2055 --bind_port 2055
+cp roneo-config-example.yaml roneo-config.yaml
+# Edit config
+(vi|nano|vim|pico|editorofyourchoice) roneo-config.yaml
+python3 main.py --configfile roneo-config.yaml
 ```
